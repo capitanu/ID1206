@@ -8,18 +8,18 @@
 
 #define TRUE 1
 #define FALSE 0
-#define HEAD sizeof(struct head)
+#define HEAD sizeof(struct taken)
 
 #define MIN(size) (((size) > (16)) ? (size):(16))
 #define LIMIT(size) (MIN(0) + HEAD + size)
-#define MAGIC(memory) ((struct head*)memory - 1)
-#define HIDE(block) (void*)((struct head*)block + 1)
+#define MAGIC(memory) ((struct taken*)memory - 1)
+#define HIDE(block) (void*)((struct taken*)block + 1)
 
 #define ALIGN 8
 #define ARENA (64*1024)
 
-#define PRINT_FREE 0
-#define PRINT_USED 0
+#define PRINT_DALLOC 0
+
 struct head {
   uint16_t bsize;
   uint16_t bfree;
@@ -29,21 +29,22 @@ struct head {
   struct head *next;
 };
 
+struct taken {
+  uint16_t bsize;
+  uint16_t bfree;
+  uint16_t size;
+  uint16_t free;  
+};
+
 struct head *arena = NULL;
 
 struct head *flist;
 
-int space_used = 24;
-
-void print_space_used(){
-  printf("Headers used %d bytes of memory in this run.\n",space_used);
-}
 
 
 struct head *after(struct head *block){
   return (struct head*)((char*)block + HEAD + block->size);
 }
-
 
 struct head *before(struct head *block){
   return (struct head*)((char*)block - block->bsize - HEAD);
@@ -53,15 +54,16 @@ struct head *before(struct head *block){
 void print_flist(){
   int i = 0;
   struct head *n = flist;
-  //  printf("Block at position %d has size %d and it located at: %p\n", i, n->size,n);
+  printf("Block at position %d has size %d and it located at: %p\n", i, n->size,n);
   n = n->next;
   while(n != flist){
     i++;
-    //    sleep(1);
-    //    printf("Block at position %d has size %d and is located at: %p\n", i, n->size,n);
+    sleep(1);
+    printf("Block at position %d has size %d and is located at: %p\n", i, n->size,n);
     n = n->next;
   }
 }
+
 struct head *new(){
   if(arena != NULL){
     printf("one arena already allocated \n");
@@ -122,7 +124,6 @@ void insert(struct head *block){
 
 
 struct head *split(struct head *block, int size){
-  space_used += HEAD;
   int rsize = block->size - HEAD - size;
   block->size = rsize;
 
@@ -179,7 +180,6 @@ struct head *merge(struct head *block){
   struct head *bfr = before(block);
   int new_size, x = 0;
   if(bfr != NULL && block->bfree){
-    space_used -= HEAD;
     detach(bfr);
     new_size = HEAD + block->size + block->bsize;
     block = bfr;
@@ -187,26 +187,27 @@ struct head *merge(struct head *block){
     x = 1;
   }
   if(aft != NULL && aft->free){
-    space_used -= HEAD;
     detach(aft);
     new_size = HEAD + block->size + aft->size;
     block->size = new_size;
     block->free = TRUE;
     x = 1;
   }
+  if(x)
+    printf("Block %p has been merged\n", block);
   return block;
 }
 
 
 void *dalloc(size_t request){
-  if(PRINT_FREE)
+  if(PRINT_DALLOC)
     printf("Number of bytes requested: %d\n", request);
   if(arena == NULL){
     flist = new();
     flist->next = flist;
     flist->prev = flist;
   }
-  if(PRINT_FREE)
+  if(PRINT_DALLOC)
     printf("Number of bytes in the main block before allocation: %d\n",flist->size);  
   if(request <= 0){
     return NULL;
@@ -216,13 +217,10 @@ void *dalloc(size_t request){
   if(taken == NULL){
     return NULL;
   }
-  if(PRINT_FREE){
+  if(PRINT_DALLOC){
     printf("Number of bytes in the main block after allocation: %d\n\n",flist->size);
     printf("Decided allocation size:  %d\n",taken->size);
     printf("The location of the given block: %p\n", taken);
-  }
-  if(PRINT_USED){
-    printf("Block at %p has been handed for use\n", taken);
   }
   return HIDE(taken);
 }
