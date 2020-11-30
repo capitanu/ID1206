@@ -16,9 +16,9 @@
 #define HIDE(block) (void*)((struct head*)block + 1)
 
 #define ALIGN 8
-#define ARENA (64*1024)
+#define ARENA (64*1024*1024)
 
-#define PRINT_FREE 0
+#define PRINT_FREE 1
 #define PRINT_USED 0
 struct head {
   uint16_t bsize;
@@ -192,6 +192,11 @@ struct head *merge(struct head *block){
     new_size = HEAD + block->size + aft->size;
     block->size = new_size;
     block->free = TRUE;
+     struct head *aftaft = after(aft);
+        if(aftaft != NULL){
+            aftaft->bsize = new_size;
+            aftaft->bfree = TRUE;
+        }
     x = 1;
   }
   return block;
@@ -229,6 +234,7 @@ void *dalloc(size_t request){
 
 void dfree(void *memory){
   if(memory != NULL){
+    
     struct head *block =(struct head*) MAGIC(memory);
 
     struct head *aft = after(block);
