@@ -29,7 +29,7 @@ void *increment(void *arg) {
   int id = ((args*)arg)->id;
 
   int spin = 0;
-  volatile int *mutex = ((args*)arg)->mutex;
+  volatile int *mutex = (*((args*)arg)).mutex; 
   printf("start %d\n", id);
   for(int i = 0; i < inc; i++){
     spin += lock(mutex);
