@@ -57,6 +57,7 @@ void toggle(cell *lst, int r){
 typedef struct args {int inc; int id; cell *list;} args;
 
 void *bench(void *arg){
+  printf("thread %d \n", ((args*)arg)->id);
   int inc = ((args*)arg)->inc;
   int id = ((args*)arg)->id;
   cell *lstp = ((args*)arg)->list;
