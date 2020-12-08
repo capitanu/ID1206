@@ -1,11 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+//#include <math.h>
 
 volatile int count = 0;
 
 volatile int request[2] = {0, 0};
 volatile int turn = 0;
+
+
 
 void lock(int id){
   request[id] = 1;
@@ -41,8 +44,10 @@ int main(int argc, char *argv[]){
 
   int inc = atoi(argv[1]);
 
+
   pthread_t one_p, two_p;
   args one_args, two_args;
+  srand((unsigned int) 3);
 
   one_args.inc = inc;
   two_args.inc = inc;
